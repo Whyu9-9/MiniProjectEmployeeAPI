@@ -86,10 +86,18 @@ namespace employee.Controllers
         [HttpPost]
         public async Task<ActionResult<Employee>> PostEmployee(Employee employee)
         {
-          if (_context.Employees == null)
-          {
-              return Problem("Entity set 'EmployeeApiContext.Employees'  is null.");
-          }
+            if (_context.Employees == null)
+            {
+                return Problem("Entity set 'EmployeeApiContext.Employees'  is null.");
+            }
+
+            var check = await _context.Employees.FirstOrDefaultAsync(e => e.Name == employee.Name && e.Company == employee.Company);
+
+            if (check != null)
+            {
+                return Problem("Employee already exist!");
+            }
+
             _context.Employees.Add(employee);
             await _context.SaveChangesAsync();
 

@@ -26,15 +26,42 @@ namespace employee.Controllers
             _config = configuration;
         }
 
+        // POST: api/Auth/register
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public async Task<ActionResult<string>> Register(Admin admin)
+        {
+            if (_context.Admins == null)
+            {
+               return Problem("Entity set 'EmployeeApiContext.Admins' is null.");
+            }
+
+            var hashedPass = HashPasword(admin.Password, out var salt);
+            admin.Password = hashedPass;
+            admin.Salt = Convert.ToHexString(salt);
+
+            var check = await _context.Admins.FirstOrDefaultAsync(a => a.Username == admin.Username);
+
+            if (check != null)
+            {
+                return Problem("Admin already exist!");
+            }
+
+            _context.Admins.Add(admin);
+            await _context.SaveChangesAsync();
+
+            return "Bearer " + GenerateToken(admin);
+        }
+
         // POST: api/Auth/login
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<ActionResult<string>> Login(string username, string password)
         {
-          if (_context.Admins == null)
-          {
-              return NotFound();
-          }
+            if (_context.Admins == null)
+            {
+                return NotFound();
+            }
             var admin = await _context.Admins.FirstOrDefaultAsync(a => a.Username == username);
 
             if (admin == null)
@@ -42,32 +69,14 @@ namespace employee.Controllers
                 return NotFound();
             }
 
-            if(!VerifyPassword(password, admin.Password, HexStringToByteArray(admin.Salt)))
+            if (!VerifyPassword(password, admin.Password, HexStringToByteArray(admin.Salt)))
             {
                 return BadRequest();
             }
 
-            return GenerateToken(admin);
+            return "Bearer " + GenerateToken(admin);
         }
 
-        // POST: api/Auth/register
-        [HttpPost("register")]
-        public async Task<ActionResult<Admin>> Register(Admin admin)
-        {
-          if (_context.Admins == null)
-          {
-              return Problem("Entity set 'EmployeeApiContext.Admins'  is null.");
-          }
-            var hashedPass = HashPasword(admin.Password, out var salt);
-            admin.Password = hashedPass;
-            admin.Salt = Convert.ToHexString(salt);
-
-            _context.Admins.Add(admin);
-            await _context.SaveChangesAsync();
-
-            return admin;
-        }
-        
         private string HashPasword(string password, out byte[] salt)
         {
            salt = RandomNumberGenerator.GetBytes(keySize);
