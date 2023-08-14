@@ -1,3 +1,6 @@
 # MiniProjectEmployeeAPI
 
-to run the project: dotnet run
+to run the API project:
+```console
+dotnet run
+```
