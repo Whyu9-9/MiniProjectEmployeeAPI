@@ -293,3 +293,7 @@
 /Users/wahyu/Documents/Kerja/PT. Taksu Teknologi Indonesia/employee/employee/bin/Debug/net6.0/Scrutor.dll
 /Users/wahyu/Documents/Kerja/PT. Taksu Teknologi Indonesia/employee/employee/bin/Debug/net6.0/Swashbuckle.AspNetCore.Annotations.dll
 /Users/wahyu/Documents/Kerja/PT. Taksu Teknologi Indonesia/employee/employee/bin/Debug/net6.0/Swashbuckle.AspNetCore.Filters.dll
+/Users/wahyu/Documents/Kerja/PT. Taksu Teknologi Indonesia/employee/employee/bin/Debug/net6.0/Ardalis.Specification.dll
+/Users/wahyu/Documents/Kerja/PT. Taksu Teknologi Indonesia/employee/employee/bin/Debug/net6.0/Ardalis.Specification.EntityFrameworkCore.dll
+/Users/wahyu/Documents/Kerja/PT. Taksu Teknologi Indonesia/employee/employee/bin/Debug/net6.0/AutoMapper.dll
+/Users/wahyu/Documents/Kerja/PT. Taksu Teknologi Indonesia/employee/employee/bin/Debug/net6.0/AutoMapper.Extensions.Microsoft.DependencyInjection.dll

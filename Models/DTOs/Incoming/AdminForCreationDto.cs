@@ -1,12 +1,13 @@
-﻿namespace EmployeeApi.Models;
+﻿using System.Text.Json.Serialization;
 
-public partial class Admin
+namespace EmployeeApi.DTOs.Incoming;
+
+public class AdminForCreationDto
 {
-    public uint Id { get; set; }
-
     public string Username { get; set; } = null!;
 
     public string Password { get; set; } = null!;
 
+    [JsonIgnore]
     public string? Salt { get; set; }
 }

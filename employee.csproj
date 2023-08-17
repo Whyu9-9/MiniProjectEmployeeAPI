@@ -22,12 +22,38 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.21" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.4" />
     <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="6.0.1" />
+    <PackageReference Include="Ardalis.Specification" Version="6.0.1" />
+    <PackageReference Include="Ardalis.Specification.EntityFrameworkCore" Version="6.0.1" />
+    <PackageReference Include="AutoMapper" Version="6.2.2" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="3.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <None Remove="Controllers\" />
+    <None Remove="Models\" />
+    <None Remove="Models\DTO\Incoming\" />
+    <None Remove="Repository\" />
+    <None Remove="Repository\EmployeeRepository\" />
+    <None Remove="Profiles\" />
+    <None Remove="Models\DTOs\" />
+    <None Remove="Models\DTOs\Outgoing\" />
+    <None Remove="Repository\AdminRepository\" />
+    <None Remove="Repository\ProjectRepository\" />
+    <None Remove="Specification\" />
+    <None Remove="Specification\EmployeeSpecification\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Controllers\" />
+    <Folder Include="Models\" />
+    <Folder Include="Models\DTOs\Incoming\" />
+    <Folder Include="Repository\" />
+    <Folder Include="Repository\EmployeeRepository\" />
+    <Folder Include="Profiles\" />
+    <Folder Include="Models\DTOs\" />
+    <Folder Include="Models\DTOs\Outgoing\" />
+    <Folder Include="Repository\AdminRepository\" />
+    <Folder Include="Repository\ProjectRepository\" />
+    <Folder Include="Specification\" />
+    <Folder Include="Specification\EmployeeSpecification\" />
   </ItemGroup>
 </Project>

@@ -1,7 +1,12 @@
 ﻿using System.Text;
+using System.Text.Json.Serialization;
+using AutoMapper;
+using employee.Repository.AdminRepository;
+using employee.Repository.EmployeeRepository;
 using EmployeeApi.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
@@ -14,10 +19,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
+            ValidateIssuer = false,
             ValidateAudience = true,
             ValidateLifetime = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            //ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
         };
@@ -43,11 +48,24 @@ builder.Services.AddSwaggerGen(
 builder.Services.AddDbContext<EmployeeApiContext>(
     options =>
     {
-        options.UseMySql(builder.Configuration.GetConnectionString("EmployeeApi"),
-        Microsoft.EntityFrameworkCore.ServerVersion.Parse("8.0.30-mysql")
+        options.UseMySql(
+            builder.Configuration.GetConnectionString("EmployeeApi"),
+            ServerVersion.Parse("8.0.30-mysql")
         );
+        options.ConfigureWarnings(warnings => warnings.Ignore(CoreEventId.NavigationBaseIncludeIgnored));
     }
 );
+
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+});
+
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 var app = builder.Build();
 

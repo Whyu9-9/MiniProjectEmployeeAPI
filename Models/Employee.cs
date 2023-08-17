@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace EmployeeApi.Models;
+﻿namespace EmployeeApi.Models;
 
 public partial class Employee
 {
@@ -14,4 +11,6 @@ public partial class Employee
     public string? Phone { get; set; }
 
     public string? Address { get; set; }
+
+    public virtual ICollection<ProjectEmployee> ProjectEmployees { get; set; } = new List<ProjectEmployee>();
 }

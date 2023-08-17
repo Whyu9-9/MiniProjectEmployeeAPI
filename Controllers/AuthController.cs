@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using EmployeeApi.Data;
-using EmployeeApi.Models;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
+using employee.Repository.AdminRepository;
+using EmployeeApi.DTOs.Incoming;
 
 namespace employee.Controllers
 {
@@ -17,77 +16,34 @@ namespace employee.Controllers
         const int keySize = 64;
         const int iterations = 350000;
         HashAlgorithmName hashAlgorithm = HashAlgorithmName.SHA512;
-        private readonly EmployeeApiContext _context;
+
+        private readonly IAdminRepository _adminRepo;
         private IConfiguration _config;
 
-        public AuthController(EmployeeApiContext context, IConfiguration configuration)
+        public AuthController(IAdminRepository adminRepo, IConfiguration configuration)
         {
-            _context = context;
+            _adminRepo = adminRepo;
             _config = configuration;
-        }
-
-        // POST: api/Auth/register
-        [AllowAnonymous]
-        [HttpPost("register")]
-        public async Task<ActionResult<string>> Register(Admin admin)
-        {
-            if (_context.Admins == null)
-            {
-               return Problem("Entity set 'EmployeeApiContext.Admins' is null.");
-            }
-
-            var hashedPass = HashPasword(admin.Password, out var salt);
-            admin.Password = hashedPass;
-            admin.Salt = Convert.ToHexString(salt);
-
-            var check = await _context.Admins.FirstOrDefaultAsync(a => a.Username == admin.Username);
-
-            if (check != null)
-            {
-                return Problem("Admin already exist!");
-            }
-
-            _context.Admins.Add(admin);
-            await _context.SaveChangesAsync();
-
-            return "Bearer " + GenerateToken(admin);
         }
 
         // POST: api/Auth/login
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult<string>> Login(string username, string password)
+        public ActionResult<string> Login(string username, string password)
         {
-            if (_context.Admins == null)
-            {
-                return NotFound();
-            }
-            var admin = await _context.Admins.FirstOrDefaultAsync(a => a.Username == username);
+            var admin = _adminRepo.GetAdminByUsername(username);
 
-            if (admin == null)
+            if (admin != null)
             {
-                return NotFound();
-            }
+                if (VerifyPassword(password, admin.Password, HexStringToByteArray(admin.Salt)))
+                {
+                    return "Bearer " + GenerateToken(admin);
+                }
 
-            if (!VerifyPassword(password, admin.Password, HexStringToByteArray(admin.Salt)))
-            {
                 return BadRequest();
             }
 
-            return "Bearer " + GenerateToken(admin);
-        }
-
-        private string HashPasword(string password, out byte[] salt)
-        {
-           salt = RandomNumberGenerator.GetBytes(keySize);
-            var hash = Rfc2898DeriveBytes.Pbkdf2(
-                Encoding.UTF8.GetBytes(password),
-                salt,
-                iterations,
-            hashAlgorithm,
-                keySize);
-
-            return Convert.ToHexString(hash);
+            return NotFound();
         }
 
         private bool VerifyPassword(string password, string hash, byte[] salt)
@@ -108,16 +64,16 @@ namespace employee.Controllers
             return byteArray;
         }
 
-        private string GenerateToken(Admin admin)
+        private string GenerateToken(AdminForCreationDto admin)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(s: _config["Jwt:Key"]));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                            _config["Jwt:Issuer"],
+                            admin.Username,
                             _config["Jwt:Audience"],
                             null,
-                            expires: DateTime.Now.AddMinutes(1),
+                            expires: DateTime.Now.AddMinutes(30),
                             signingCredentials: credentials
                         );
 
