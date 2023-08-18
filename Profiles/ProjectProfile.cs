@@ -29,18 +29,36 @@ namespace employee.Profiles
                     dest => dest.Description,
                     opt => opt.MapFrom(src => src.Description)
                 ).ForMember(
-                    dest => dest.ProjectEmployees,
-                    opt => opt.MapFrom(src => src.ProjectEmployees.Select(pe => pe.Employee))
+                    dest => dest.Employees,
+                    opt => opt.MapFrom(src => src.Employees)
                 );
 
-            CreateMap<ProjectEmployeeForCreationDto, ProjectEmployee>()
+            CreateMap<Project, ProjectDtoAfterCreate>()
                 .ForMember(
-                    dest => dest.ProjectId,
-                    opt => opt.MapFrom(src => src.ProjectId)
+                    dest => dest.Id,
+                    opt => opt.MapFrom(src => src.Id)
                 ).ForMember(
-                    dest => dest.EmployeeId,
-                    opt => opt.MapFrom(src => src.EmployeeId)
+                    dest => dest.Name,
+                    opt => opt.MapFrom(src => src.Name)
+                ).ForMember(
+                    dest => dest.Description,
+                    opt => opt.MapFrom(src => src.Description)
                 );
+
+            //CreateMap<ProjectEmployeeForCreationDto, ProjectEmployee>()
+            //    .ForMember(
+            //        dest => dest.ProjectId,
+            //        opt => opt.MapFrom(src => src.ProjectId)
+            //    ).ForMember(
+            //        dest => dest.EmployeeId,
+            //        opt => opt.Ignore()
+            //    );
+
+            //CreateMap<ProjectEmployeeForUpdateDto, ProjectEmployee>()
+            //    .ForMember(
+            //        dest => dest.EmployeeId,
+            //        opt => opt.Ignore()
+            //    );
         }
     }
 }

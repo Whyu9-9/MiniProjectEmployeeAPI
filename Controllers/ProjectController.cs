@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using employee.Repository.EmployeeRepository;
 using EmployeeApi.Models.DTOs.Incoming;
 using EmployeeApi.Models.DTOs.Outgoing;
+using AutoMapper;
+using EmployeeApi.Models;
+using employee.Specification.ProjectSpecification;
+using employee.Specification.EmployeeSpecification;
+using employee.Models.DTOs.Incoming;
 
 namespace employee.Controllers
 {
@@ -10,19 +14,24 @@ namespace employee.Controllers
     [ApiController]
     public class ProjectController : ControllerBase
     {
-        private readonly IProjectRepository _projectRepo;
+        private readonly IRepository<Project> _projectRepo;
+        private readonly IRepository<Employee> _employeeRepo;
+        private readonly IMapper _mapper;
 
-        public ProjectController(IProjectRepository projectRepo)
+        public ProjectController(IRepository<Project> projectRepo, IRepository<Employee> employeeRepo, IMapper mapper)
         {
             _projectRepo = projectRepo;
+            _mapper = mapper;
+            _employeeRepo = employeeRepo;
         }
 
         // GET: api/Project
         [Authorize]
         [HttpGet]
-        public IActionResult GetProjects()
+        public async Task<IActionResult> GetProjectsAsync()
         {
-            var results = _projectRepo.GetProject();
+            var fetchs = await _projectRepo.ListAsync();
+            var results = _mapper.Map<IEnumerable<ProjectDto>>(fetchs);
 
             return Ok(results);
         }
@@ -30,9 +39,10 @@ namespace employee.Controllers
         // GET: api/Project/5
         [Authorize]
         [HttpGet("{id}")]
-        public IActionResult GetProject(uint id)
+        public async Task<IActionResult> GetProjectAsync(uint id)
         {
-            var result = _projectRepo.GetProjectById(id);
+            var fetch = await _projectRepo.GetBySpecAsync(new ProjectWithEmployeListSpec(id));
+            var result = _mapper.Map<ProjectDto>(fetch);
 
             return Ok(result);
         }
@@ -41,74 +51,97 @@ namespace employee.Controllers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [Authorize]
         [HttpPost]
-        public IActionResult PostProject(ProjectForCreationDto data)
+        public async Task<IActionResult> PostProjectAsync(ProjectForCreationDto data)
         {
-            var employee = _projectRepo.PostProject(data);
+            var mappedInput = _mapper.Map<Project>(data);
+            var project = await _projectRepo.AddAsync(mappedInput);
+            var result = _mapper.Map<ProjectDtoAfterCreate>(project);
 
-            return Ok(employee);
+            return Ok(result);
         }
 
         // POST: api/Project/project-employee
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [Authorize]
         [HttpPost("project-employee")]
-        public IActionResult PostProjectEmployee(ProjectEmployeeForCreationDto data)
+        public async Task<IActionResult> PostProjectEmployeeAsync(ProjectEmployeeForCreationDto data)
         {
-            var projectDto = _projectRepo.PostProjectEmployee(data);
+            var fetch = await _projectRepo.GetByIdAsync(data.ProjectId);
 
-            if (projectDto == null)
+            if (fetch == null)
             {
-                // Handle the case where the project doesn't exist
                 return NotFound();
             }
 
-            return Ok(projectDto);
+            var fetchEmployees = await _employeeRepo.ListAsync(new EmployeeByIdsSpec(data.EmployeeId));
+
+            fetch.Employees = fetchEmployees;
+
+            await _projectRepo.UpdateAsync(fetch);
+
+            var result = _mapper.Map<ProjectDto>(fetch);
+
+            return Ok(result);
         }
 
         // PUT: api/Project/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [Authorize]
         [HttpPut("{id}")]
-        public IActionResult PutProject(uint id, ProjectForCreationDto data)
+        public async Task<IActionResult> PutProjectAsync(uint id, ProjectForCreationDto data)
         {
-            var result = _projectRepo.PutProject(id, data);
+            var existingProject = await _projectRepo.GetByIdAsync(id);
 
-            if(result == null)
+            if (existingProject == null)
             {
                 return BadRequest("ID not found!");
             }
 
-            return Ok(result);
+            var mappedInput = _mapper.Map(data, existingProject);
+
+            await _projectRepo.UpdateAsync(mappedInput);
+
+            return Ok(_mapper.Map<ProjectDtoAfterCreate>(mappedInput));
         }
 
         // PUT: api/Project/5/project-employee
         [Authorize]
         [HttpPut("{id}/project-employee")]
-        public IActionResult PutProjectEmployee(uint id, ProjectEmployeeForCreationDto data)
+        public async Task<IActionResult> PutProjectEmployeeAsync(uint id, ProjectEmployeeForUpdateDto data)
         {
-            var projectDto = _projectRepo.PutProjectEmployee(id, data);
+            var fetch = await _projectRepo.GetByIdAsync(id);
 
-            if (projectDto == null)
+            if (fetch == null)
             {
-                return NotFound();
+                return BadRequest();
             }
 
-            return Ok(projectDto);
+            var fetchEmployees = await _employeeRepo.ListAsync(new EmployeeByIdsSpec(data.EmployeeId));
+
+            fetch.Employees = fetchEmployees;
+
+            await _projectRepo.UpdateAsync(fetch);
+
+            var result = _mapper.Map<ProjectDto>(fetch);
+
+            return Ok(result);
         }
 
         // DELETE: api/Project/5
         [Authorize]
         [HttpDelete("{id}")]
-        public IActionResult DeleteProject(uint id)
+        public async Task<IActionResult> DeleteProjectAsync(uint id)
         {
-            var result = _projectRepo.DeleteProject(id);
+            var result = await _projectRepo.GetByIdAsync(id);
 
             if (result == null)
             {
                 return BadRequest("ID not found!");
             }
 
+            await _projectRepo.DeleteAsync(result);
+
             return Ok("Project Deleted!");
-        }        
+        }
     }
 }

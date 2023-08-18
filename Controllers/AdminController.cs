@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using EmployeeApi.DTOs.Incoming;
-using employee.Repository.AdminRepository;
 using System.Security.Cryptography;
 using System.Text;
+using EmployeeApi.Models;
+using EmployeeApi.DTOs.Outgoing;
+using AutoMapper;
+using employee.Specification.AdminSpecification;
 
 namespace employee.Controllers
 {
@@ -15,19 +18,22 @@ namespace employee.Controllers
         const int iterations = 350000;
         HashAlgorithmName hashAlgorithm = HashAlgorithmName.SHA512;
 
-        private readonly IAdminRepository _adminRepo;
+        private readonly IRepository<Admin> _adminRepo;
+        private readonly IMapper _mapper;
 
-        public AdminController(IAdminRepository adminRepo)
+        public AdminController(IRepository<Admin> adminRepo, IMapper mapper)
         {
             _adminRepo = adminRepo;
+            _mapper = mapper;
         }
 
         // GET: api/Admin
         [Authorize]
         [HttpGet]
-        public IActionResult GetAdmins()
+        public async Task<IActionResult> GetAdmins()
         {
-            var results = _adminRepo.GetAdmin();
+            var fetchs = await _adminRepo.ListAsync();
+            var results = _mapper.Map<IEnumerable<AdminDto>>(fetchs);
 
             return Ok(results);
         }
@@ -35,9 +41,11 @@ namespace employee.Controllers
         // GET: api/Admin/5
         [Authorize]
         [HttpGet("{id}")]
-        public IActionResult GetAdmin(uint id)
+        public async Task<IActionResult> GetAdmin(uint id)
         {
-            var result = _adminRepo.GetAdminById(id);
+            var fetch = await _adminRepo.GetByIdAsync(id);
+
+            var result = _mapper.Map<AdminDto>(fetch);
 
             return Ok(result);
         }
@@ -46,55 +54,65 @@ namespace employee.Controllers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [Authorize]
         [HttpPost]
-        public IActionResult PostAdmin(AdminForCreationDto data)
+        public async Task<IActionResult> PostAdminAsync(AdminForCreationDto data)
         {
+            var existingAdmin = await _adminRepo.GetBySpecAsync(new SearchByUsernameSpec(data.Username));
+
+            if (existingAdmin != null)
+            {
+                return Problem("Admin already exist!");
+            }
+
             var hashedPass = HashPasword(data.Password, out var salt);
 
             data.Password = hashedPass;
             data.Salt = Convert.ToHexString(salt);
 
-            var admin = _adminRepo.PostAdmin(data);
+            var mappedInput = _mapper.Map<Admin>(data);
+            var admin = await _adminRepo.AddAsync(mappedInput);
+            var result = _mapper.Map<AdminDto>(admin);
 
-            if (admin == null)
-            {
-                return Problem("Admin already exist!");
-            }
-
-            return Ok(admin);
+            return Ok(result);
         }
 
         // PUT: api/Admin/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [Authorize]
         [HttpPut("{id}")]
-        public IActionResult PutAdmin(uint id, AdminForEditDto data)
+        public async Task<IActionResult> PutAdmin(uint id, AdminForEditDto data)
         {
-            var result = _adminRepo.PutAdmin(id, data);
+            var existingAdmin = await _adminRepo.GetByIdAsync(id);
 
-            if(result == null)
+            if (existingAdmin == null)
             {
                 return BadRequest("ID not found!");
             }
 
-            return Ok(result);
+            var mappedInput = _mapper.Map(data, existingAdmin);
+
+            await _adminRepo.UpdateAsync(mappedInput);
+
+            return Ok(_mapper.Map<AdminDto>(mappedInput));
         }
 
         // DELETE: api/Admin/5
         [Authorize]
         [HttpDelete("{id}")]
-        public IActionResult DeleteAdmin(uint id)
+        public async Task<IActionResult> DeleteAdminAsync(uint id)
         {
-            var result = _adminRepo.DeleteAdmin(id);
+            var existingAdmin = await _adminRepo.GetByIdAsync(id);
 
-            if (result == null)
+            if (existingAdmin == null)
             {
                 return BadRequest("ID not found!");
             }
 
+            await _adminRepo.DeleteAsync(existingAdmin);
+
             var response = new
             {
                 Message = "Admin Deleted!",
-                DeletedAdmin = result
+                DeletedAdmin = _mapper.Map<AdminDto>(existingAdmin)
             };
 
             return Ok(response);
@@ -105,10 +123,11 @@ namespace employee.Controllers
             salt = RandomNumberGenerator.GetBytes(keySize);
             var hash = Rfc2898DeriveBytes.Pbkdf2(
                 Encoding.UTF8.GetBytes(password),
-            salt,
+                salt,
                 iterations,
-            hashAlgorithm,
-                keySize);
+                hashAlgorithm,
+                keySize
+            );
 
             return Convert.ToHexString(hash);
         }

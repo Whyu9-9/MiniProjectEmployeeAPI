@@ -33,13 +33,12 @@
     <None Remove="Models\" />
     <None Remove="Models\DTO\Incoming\" />
     <None Remove="Repository\" />
-    <None Remove="Repository\EmployeeRepository\" />
     <None Remove="Profiles\" />
     <None Remove="Models\DTOs\" />
     <None Remove="Models\DTOs\Outgoing\" />
-    <None Remove="Repository\AdminRepository\" />
-    <None Remove="Repository\ProjectRepository\" />
     <None Remove="Specification\" />
+    <None Remove="Specification\AdminSpecification\" />
+    <None Remove="Specification\ProjectSpecification\" />
     <None Remove="Specification\EmployeeSpecification\" />
   </ItemGroup>
   <ItemGroup>
@@ -47,13 +46,12 @@
     <Folder Include="Models\" />
     <Folder Include="Models\DTOs\Incoming\" />
     <Folder Include="Repository\" />
-    <Folder Include="Repository\EmployeeRepository\" />
     <Folder Include="Profiles\" />
     <Folder Include="Models\DTOs\" />
     <Folder Include="Models\DTOs\Outgoing\" />
-    <Folder Include="Repository\AdminRepository\" />
-    <Folder Include="Repository\ProjectRepository\" />
     <Folder Include="Specification\" />
+    <Folder Include="Specification\AdminSpecification\" />
+    <Folder Include="Specification\ProjectSpecification\" />
     <Folder Include="Specification\EmployeeSpecification\" />
   </ItemGroup>
 </Project>

@@ -1,8 +1,6 @@
 ﻿namespace employee.Models.DTOs.Incoming;
 
-public partial class ProjectEmployeeForCreationDto
+public partial class ProjectEmployeeForUpdateDto
 {
-    public uint? ProjectId { get; set; }
-
     public List<uint>? EmployeeId { get; set; }
 }

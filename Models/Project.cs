@@ -8,5 +8,5 @@ public partial class Project
 
     public string? Description { get; set; }
 
-    public virtual ICollection<ProjectEmployee> ProjectEmployees { get; set; } = new List<ProjectEmployee>();
+    public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
 }

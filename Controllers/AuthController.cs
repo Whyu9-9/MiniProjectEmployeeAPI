@@ -4,8 +4,10 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
-using employee.Repository.AdminRepository;
 using EmployeeApi.DTOs.Incoming;
+using EmployeeApi.Models;
+using employee.Specification.AdminSpecification;
+using AutoMapper;
 
 namespace employee.Controllers
 {
@@ -17,27 +19,29 @@ namespace employee.Controllers
         const int iterations = 350000;
         HashAlgorithmName hashAlgorithm = HashAlgorithmName.SHA512;
 
-        private readonly IAdminRepository _adminRepo;
+        private readonly IRepository<Admin> _adminRepo;
         private IConfiguration _config;
+        private readonly IMapper _mapper;
 
-        public AuthController(IAdminRepository adminRepo, IConfiguration configuration)
+        public AuthController(IRepository<Admin> adminRepo, IMapper mapper , IConfiguration configuration)
         {
             _adminRepo = adminRepo;
             _config = configuration;
+            _mapper = mapper;
         }
 
         // POST: api/Auth/login
         [AllowAnonymous]
         [HttpPost("login")]
-        public ActionResult<string> Login(string username, string password)
+        public async Task<ActionResult<string>> LoginAsync(string username, string password)
         {
-            var admin = _adminRepo.GetAdminByUsername(username);
+            var admin = await _adminRepo.GetBySpecAsync(new SearchByUsernameSpec(username));
 
             if (admin != null)
             {
                 if (VerifyPassword(password, admin.Password, HexStringToByteArray(admin.Salt)))
                 {
-                    return "Bearer " + GenerateToken(admin);
+                    return "Bearer " + GenerateToken(_mapper.Map<AdminForCreationDto>(admin));
                 }
 
                 return BadRequest();

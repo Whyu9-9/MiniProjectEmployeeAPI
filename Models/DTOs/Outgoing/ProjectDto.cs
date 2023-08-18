@@ -10,5 +10,5 @@ public class ProjectDto
 
     public string? Description { get; set; }
 
-    public virtual ICollection<EmployeeDto> ProjectEmployees { get; set; } = new List<EmployeeDto>();
+    public virtual ICollection<EmployeeDto> Employees { get; set; } = new List<EmployeeDto>();
 }

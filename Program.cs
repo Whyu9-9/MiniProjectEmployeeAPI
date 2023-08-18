@@ -1,8 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json.Serialization;
 using AutoMapper;
-using employee.Repository.AdminRepository;
-using employee.Repository.EmployeeRepository;
+using employee.Repository;
 using EmployeeApi.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -61,9 +60,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
 
-builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
-builder.Services.AddScoped<IAdminRepository, AdminRepository>();
-builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddTransient(typeof(IRepository<>), typeof(EfRepository<>));
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 

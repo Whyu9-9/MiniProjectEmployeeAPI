@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using EmployeeApi.DTOs.Incoming;
-using employee.Repository.EmployeeRepository;
+using EmployeeApi.Models;
+using AutoMapper;
+using EmployeeApi.DTOs.Outgoing;
 
 namespace employee.Controllers
 {
@@ -9,19 +11,22 @@ namespace employee.Controllers
     [ApiController]
     public class EmployeeController : ControllerBase
     {
-        private readonly IEmployeeRepository _employeeRepo;
+        private readonly IRepository<Employee> _employeeRepo;
+        private readonly IMapper _mapper;
 
-        public EmployeeController(IEmployeeRepository employeeRepo)
+        public EmployeeController(IRepository<Employee> employeeRepo, IMapper mapper)
         {
             _employeeRepo = employeeRepo;
+            _mapper = mapper;
         }
 
         // GET: api/Employee
         [Authorize]
         [HttpGet]
-        public IActionResult GetEmployees()
+        public async Task<IActionResult> GetEmployeesAsync()
         {
-            var results = _employeeRepo.GetEmployee();
+            var fetchs = await _employeeRepo.ListAsync();
+            var results = _mapper.Map<IEnumerable<EmployeeDto>>(fetchs);
 
             return Ok(results);
         }
@@ -29,9 +34,10 @@ namespace employee.Controllers
         // GET: api/Employee/5
         [Authorize]
         [HttpGet("{id}")]
-        public IActionResult GetEmployee(uint id)
+        public async Task<IActionResult> GetEmployeeAsync(uint id)
         {
-            var result = _employeeRepo.GetEmployeeById(id);
+            var fetch = await _employeeRepo.GetByIdAsync(id);
+            var result = _mapper.Map<EmployeeDto>(fetch);
 
             return Ok(result);
         }
@@ -40,45 +46,53 @@ namespace employee.Controllers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [Authorize]
         [HttpPost]
-        public IActionResult PostEmployee(EmployeeForCreationDto data)
+        public async Task<IActionResult> PostEmployeeAsync(EmployeeForCreationDto data)
         {
-            var employee = _employeeRepo.PostEmployee(data);
+            var mappedInput = _mapper.Map<Employee>(data);
+            var employee = await _employeeRepo.AddAsync(mappedInput);
+            var result = _mapper.Map<EmployeeDto>(employee);
 
-            return Ok(employee);
+            return Ok(result);
         }
 
         // PUT: api/Employee/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [Authorize]
         [HttpPut("{id}")]
-        public IActionResult PutEmployee(uint id, EmployeeForCreationDto data)
+        public async Task<IActionResult> PutEmployeeAsync(uint id, EmployeeForCreationDto data)
         {
-            var result = _employeeRepo.PutEmployee(id, data);
+            var existingEmployee = await _employeeRepo.GetByIdAsync(id);
 
-            if(result == null)
+            if (existingEmployee == null)
             {
                 return BadRequest("ID not found!");
             }
 
-            return Ok(result);
+            var mappedInput = _mapper.Map(data, existingEmployee);
+
+            await _employeeRepo.UpdateAsync(mappedInput);
+
+            return Ok(_mapper.Map<EmployeeDto>(mappedInput));
         }
 
         // DELETE: api/Employee/5
         [Authorize]
         [HttpDelete("{id}")]
-        public IActionResult DeleteEmployee(uint id)
+        public async Task<IActionResult> DeleteEmployeeAsync(uint id)
         {
-            var result = _employeeRepo.DeleteEmployee(id);
+            var existingEmployee = await _employeeRepo.GetByIdAsync(id);
 
-            if (result == null)
+            if (existingEmployee == null)
             {
                 return BadRequest("ID not found!");
             }
 
+            await _employeeRepo.DeleteAsync(existingEmployee);
+
             var response = new
             {
                 Message = "Employee Deleted!",
-                DeletedEmployee = result
+                DeletedEmployee = _mapper.Map<EmployeeDto>(existingEmployee)
             };
 
             return Ok(response);
