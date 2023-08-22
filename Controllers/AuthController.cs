@@ -33,15 +33,15 @@ namespace employee.Controllers
         // POST: api/Auth/login
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult<string>> LoginAsync(string username, string password)
+        public async Task<IActionResult> LoginAsync(AdminForLoginDto data)
         {
-            var admin = await _adminRepo.GetBySpecAsync(new SearchByUsernameSpec(username));
+            var admin = await _adminRepo.GetBySpecAsync(new SearchByUsernameSpec(data.Username));
 
             if (admin != null)
             {
-                if (VerifyPassword(password, admin.Password, HexStringToByteArray(admin.Salt)))
+                if (VerifyPassword(data.Password, admin.Password, HexStringToByteArray(admin.Salt)))
                 {
-                    return "Bearer " + GenerateToken(_mapper.Map<AdminForCreationDto>(admin));
+                    return Ok(new { Token = GenerateToken(_mapper.Map<AdminForCreationDto>(admin)) });
                 }
 
                 return BadRequest();
@@ -77,7 +77,7 @@ namespace employee.Controllers
                             admin.Username,
                             _config["Jwt:Audience"],
                             null,
-                            expires: DateTime.Now.AddMinutes(30),
+                            expires: DateTime.Now.AddMinutes(9999),
                             signingCredentials: credentials
                         );
 

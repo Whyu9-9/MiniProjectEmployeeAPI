@@ -4,6 +4,7 @@ using EmployeeApi.DTOs.Incoming;
 using EmployeeApi.Models;
 using AutoMapper;
 using EmployeeApi.DTOs.Outgoing;
+using System;
 
 namespace employee.Controllers
 {
@@ -23,10 +24,28 @@ namespace employee.Controllers
         // GET: api/Employee
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetEmployeesAsync()
+        public async Task<IActionResult> GetEmployeesAsync([FromQuery] string? range = null)
         {
             var fetchs = await _employeeRepo.ListAsync();
-            var results = _mapper.Map<IEnumerable<EmployeeDto>>(fetchs);
+
+            int startIndex = 0;
+            int endIndex = fetchs.Count() - 1;
+
+            if (!string.IsNullOrEmpty(range))
+            {
+                var rangeParts = range.Split('-');
+                if (rangeParts.Length == 2)
+                {
+                    startIndex = int.Parse(rangeParts[0]);
+                    endIndex = int.Parse(rangeParts[1]);
+                }
+            }
+
+            var pagedResults = fetchs.Skip(startIndex).Take(endIndex - startIndex + 1);
+            var results = _mapper.Map<IEnumerable<EmployeeDto>>(pagedResults);
+
+            Response.Headers.Add("Access-Control-Expose-Headers", "Content-Range");
+            Response.Headers.Add("Content-Range", $"{startIndex}-{endIndex}/{fetchs.Count()}");
 
             return Ok(results);
         }

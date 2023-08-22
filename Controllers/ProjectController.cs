@@ -7,6 +7,7 @@ using EmployeeApi.Models;
 using employee.Specification.ProjectSpecification;
 using employee.Specification.EmployeeSpecification;
 using employee.Models.DTOs.Incoming;
+using EmployeeApi.DTOs.Outgoing;
 
 namespace employee.Controllers
 {
@@ -28,10 +29,27 @@ namespace employee.Controllers
         // GET: api/Project
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetProjectsAsync()
+        public async Task<IActionResult> GetProjectsAsync([FromQuery] string? range = null)
         {
             var fetchs = await _projectRepo.ListAsync();
-            var results = _mapper.Map<IEnumerable<ProjectDto>>(fetchs);
+            int startIndex = 0;
+            int endIndex = fetchs.Count() - 1;
+
+            if (!string.IsNullOrEmpty(range))
+            {
+                var rangeParts = range.Split('-');
+                if (rangeParts.Length == 2)
+                {
+                    startIndex = int.Parse(rangeParts[0]);
+                    endIndex = int.Parse(rangeParts[1]);
+                }
+            }
+
+            var pagedResults = fetchs.Skip(startIndex).Take(endIndex - startIndex + 1);
+            var results = _mapper.Map<IEnumerable<ProjectDto>>(pagedResults);
+
+            Response.Headers.Add("Access-Control-Expose-Headers", "Content-Range");
+            Response.Headers.Add("Content-Range", $"{startIndex}-{endIndex}/{fetchs.Count()}");
 
             return Ok(results);
         }

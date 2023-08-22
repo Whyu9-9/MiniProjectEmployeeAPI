@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using EmployeeApi.Models;
+﻿using EmployeeApi.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace EmployeeApi.Data;

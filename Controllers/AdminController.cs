@@ -7,6 +7,11 @@ using EmployeeApi.Models;
 using EmployeeApi.DTOs.Outgoing;
 using AutoMapper;
 using employee.Specification.AdminSpecification;
+using Microsoft.Extensions.Hosting;
+using System.Composition;
+using System.Reflection.PortableExecutable;
+using System.Web;
+using System.Globalization;
 
 namespace employee.Controllers
 {
@@ -30,11 +35,107 @@ namespace employee.Controllers
         // GET: api/Admin
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAdmins()
+        //public async Task<IActionResult> GetAdmins([FromQuery] string filter, [FromQuery] string range, [FromQuery] string sort)
+        //{
+        //    var fetchs = await _adminRepo.ListAsync();
+
+        //    // Apply filtering based on the 'filter' query parameter
+        //    if (!string.IsNullOrEmpty(filter))
+        //    {
+        //        Console.WriteLine($"Filter Parameter: {filter}");
+        //        fetchs = fetchs.Where(item => item.Username.Contains(filter)).ToList();
+        //    }
+
+        //    // Apply sorting based on the 'sort' query parameter
+        //    if (!string.IsNullOrEmpty(sort))
+        //    {
+        //        var sortArray = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(HttpUtility.UrlDecode(sort));
+        //        if (sortArray.Count == 2)
+        //        {
+        //            string sortField = sortArray[0];
+        //            string sortOrder = sortArray[1];
+
+        //            if (!string.IsNullOrEmpty(sortField) && (sortOrder == "ASC" || sortOrder == "DESC"))
+        //            {
+        //                if (sortField == "id" || sortField == "username") // Replace with actual property names
+        //                {
+        //                    string inputString = sortField;
+        //                    TextInfo textInfo = new CultureInfo("en-US", false).TextInfo;
+        //                    string titleCaseString = textInfo.ToTitleCase(inputString);
+
+        //                    if (sortOrder == "ASC")
+        //                    {
+        //                        fetchs = fetchs.OrderBy(item => item.GetType().GetProperty(titleCaseString)?.GetValue(item)).ToList();
+        //                    }
+        //                    else
+        //                    {
+        //                        fetchs = fetchs.OrderByDescending(item => item.GetType().GetProperty(titleCaseString)?.GetValue(item)).ToList();
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+
+
+        //    // Parse the 'range' query parameter to determine pagination
+        //    int startIndex = 0;
+        //    int endIndex = fetchs.Count() - 1;
+
+        //    if (!string.IsNullOrEmpty(range))
+        //    {
+        //        var rangeParts = range.Trim('[', ']').Split(',');
+        //        if (rangeParts.Length == 2 && int.TryParse(rangeParts[0], out int start) && int.TryParse(rangeParts[1], out int end))
+        //        {
+        //            startIndex = start;
+        //            endIndex = Math.Min(end, fetchs.Count() - 1);
+        //        }
+        //    }
+
+        //    var pagedResults = fetchs.Skip(startIndex).Take(endIndex - startIndex + 1);
+        //    var results = _mapper.Map<IEnumerable<AdminDto>>(pagedResults);
+
+        //    // Set the 'Content-Range' header for proper pagination information
+        //    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Range");
+        //    Response.Headers.Add("Content-Range", $"{startIndex}-{endIndex}/{fetchs.Count()}");
+
+        //    // Return the paged and sorted results
+        //    return Ok(results);
+        //}
+        public async Task<IActionResult> GetAdmins([FromQuery] string? filter = null, [FromQuery] string? sort = null, [FromQuery] int page = 1, [FromQuery] int perPage = 10)
         {
             var fetchs = await _adminRepo.ListAsync();
-            var results = _mapper.Map<IEnumerable<AdminDto>>(fetchs);
 
+            // Apply filtering based on the 'filter' query parameter
+            //if (!string.IsNullOrEmpty(filter) || HttpUtility.UrlDecode(filter) != "{}")
+            //{
+            //    fetchs = fetchs.Where(item => item.Username.Contains(filter)).ToList();
+            //}
+
+            //// Sorting based on the 'sort' query parameter
+            //if (!string.IsNullOrEmpty(sort))
+            //{
+            //    if (sort == "ASC")
+            //    {
+            //        fetchs = fetchs.OrderBy(item => item.Id).ToList();
+            //    }
+            //    else if (sort == "DESC")
+            //    {
+            //        fetchs = fetchs.OrderByDescending(item => item.Id).ToList();
+            //    }
+            //}
+
+            // Calculate the starting and ending indices for pagination
+            int startIndex = (page - 1) * perPage;
+            int endIndex = Math.Min(startIndex + perPage - 1, fetchs.Count() - 1);
+
+            var pagedResults = fetchs.Skip(startIndex).Take(endIndex - startIndex + 1);
+            var results = _mapper.Map<IEnumerable<AdminDto>>(pagedResults);
+
+            // Set the Content-Range header for proper pagination information
+            Response.Headers.Add("Access-Control-Expose-Headers", "Content-Range");
+            Response.Headers.Add("Content-Range", $"{startIndex}-{endIndex}/{fetchs.Count()}");
+
+            // Return the paged and sorted results
             return Ok(results);
         }
 
